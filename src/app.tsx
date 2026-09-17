@@ -2,20 +2,18 @@ import { Badge } from "@cloudflare/kumo/components/badge";
 import { Grid, GridItem } from "@cloudflare/kumo/components/grid";
 import { LayerCard } from "@cloudflare/kumo/components/layer-card";
 import { Link } from "@cloudflare/kumo/components/link";
-import { LinkButton } from "@cloudflare/kumo/components/button";
 import { Text } from "@cloudflare/kumo/components/text";
 
-const ANNOUNCEMENT_URL = "https://blog.cloudflare.com/workers-protected-by-access/";
-const SESSION_DOCS_URL =
-  "https://developers.cloudflare.com/cloudflare-one/access-controls/access-settings/session-management/";
+const GUIDE_URL =
+  "https://developers.cloudflare.com/agents/model-context-protocol/guides/remote-mcp-server/";
 
-export function App({ email }: { email: string }) {
+export function App() {
   return (
     <html lang="en">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
-        <title>Access Worker</title>
+        <title>MCP Server</title>
         <link rel="stylesheet" href="/kumo.css" />
       </head>
       <body>
@@ -24,64 +22,39 @@ export function App({ email }: { email: string }) {
             <GridItem>
               <LayerCard>
                 <LayerCard.Secondary>
-                  <Badge variant="success" appearance="dot">
-                    Authenticated
-                  </Badge>
+                  <Badge variant="info">Public</Badge>
                 </LayerCard.Secondary>
                 <LayerCard.Primary>
                   <Text variant="heading" size="lg" as="h1">
-                    Access Worker
+                    MCP Server
                   </Text>
-                  <Text variant="secondary">Signed in as</Text>
-                  <Text variant="mono">{email}</Text>
-                  <Text>
-                    Access authenticated this request before the Worker ran.
-                  </Text>
+                  <Text variant="secondary">Endpoint</Text>
+                  <Text variant="mono">/mcp</Text>
                 </LayerCard.Primary>
               </LayerCard>
             </GridItem>
 
             <GridItem>
               <LayerCard>
-                <LayerCard.Secondary>Request flow</LayerCard.Secondary>
+                <LayerCard.Secondary>Tools</LayerCard.Secondary>
                 <LayerCard.Primary>
-                  <Text>1. Access checks the session.</Text>
-                  <Text>2. Identity is attached to ctx.access.</Text>
-                  <Text>3. The Worker renders this page.</Text>
+                  <Text variant="mono">hello</Text>
+                  <Text variant="secondary">Returns a greeting.</Text>
                 </LayerCard.Primary>
               </LayerCard>
             </GridItem>
 
             <GridItem>
               <LayerCard>
-                <LayerCard.Secondary>Session</LayerCard.Secondary>
+                <LayerCard.Secondary>Docs</LayerCard.Secondary>
                 <LayerCard.Primary>
-                  <LinkButton href="/" variant="secondary">
-                    Log in
-                  </LinkButton>
-                  <LinkButton
-                    href="/cdn-cgi/access/logout"
-                    variant="outline"
+                  <Link
+                    href={GUIDE_URL}
+                    target="_blank"
+                    rel="noopener noreferrer"
                   >
-                    Log out
-                  </LinkButton>
-                  <Text variant="secondary" size="sm">
-                    <Link
-                      href={ANNOUNCEMENT_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Announcement <Link.ExternalIcon />
-                    </Link>
-                    {" · "}
-                    <Link
-                      href={SESSION_DOCS_URL}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Session docs <Link.ExternalIcon />
-                    </Link>
-                  </Text>
+                    Cloudflare guide <Link.ExternalIcon />
+                  </Link>
                 </LayerCard.Primary>
               </LayerCard>
             </GridItem>

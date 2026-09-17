@@ -1,17 +1,9 @@
 {
   "$schema": "./node_modules/wrangler/config-schema.json",
-  "name": "cloudflare-access-basic-web-app",
+  "name": "cloudflare-mcp-server",
   "main": "src/index.tsx",
   "compatibility_date": "2026-09-17",
   "compatibility_flags": ["nodejs_compat"],
-  "access": {
-    "dev": {
-      "aud": "cloudflare-access-basic-web-app",
-      "identity": {
-        "email": "developer@example.com"
-      }
-    }
-  },
   "rules": [
     {
       "type": "Text",

@@ -1,6 +1,7 @@
 import { renderToStaticMarkup } from "react-dom/server.browser";
 import { App } from "./app";
 import kumoCss from "./kumo-standalone.txt";
+import { handleMcpRequest } from "./mcp";
 
 const HTML_HEADERS = {
   "Cache-Control": "private, no-store",
@@ -17,23 +18,17 @@ const CSS_HEADERS = {
   "X-Content-Type-Options": "nosniff",
 } as const;
 
-export function renderHtml(email: string): string {
-  return `<!doctype html>${renderToStaticMarkup(<App email={email} />)}`;
+export function renderHtml(): string {
+  return `<!doctype html>${renderToStaticMarkup(<App />)}`;
 }
 
 export default {
-  async fetch(request, _env, ctx): Promise<Response> {
-    if (!ctx.access) {
-      return new Response("Access required", {
-        status: 403,
-        headers: {
-          "Cache-Control": "private, no-store",
-          "Content-Type": "text/plain; charset=UTF-8",
-        },
-      });
-    }
-
+  async fetch(request, env, ctx): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.pathname === "/mcp") {
+      return handleMcpRequest(request, env, ctx);
+    }
 
     if (url.pathname === "/kumo.css") {
       return new Response(kumoCss, { headers: CSS_HEADERS });
@@ -49,9 +44,6 @@ export default {
       });
     }
 
-    const identity = await ctx.access.getIdentity();
-    const email = identity?.email ?? "unknown";
-
-    return new Response(renderHtml(email), { headers: HTML_HEADERS });
+    return new Response(renderHtml(), { headers: HTML_HEADERS });
   },
 } satisfies ExportedHandler<Env>;

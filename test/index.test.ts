@@ -1,6 +1,6 @@
 import { env } from "cloudflare:workers";
 import { createExecutionContext } from "cloudflare:test";
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import worker from "../src";
 
 const IncomingRequest = Request as new (
@@ -8,27 +8,37 @@ const IncomingRequest = Request as new (
   init?: RequestInit,
 ) => Request<unknown, IncomingRequestCfProperties>;
 
-function accessContext(email: string | undefined) {
-  const ctx = createExecutionContext();
-  const getIdentity = vi.fn(async () => ({ email }));
-
-  Object.defineProperty(ctx, "access", {
-    value: {
-      aud: "cloudflare-access-basic-web-app",
-      getIdentity,
-    } satisfies CloudflareAccessContext,
-  });
-
-  return { ctx, getIdentity };
+function mcpRequest(
+  id: number,
+  method: string,
+  params: Record<string, unknown>,
+) {
+  return worker.fetch(
+    new IncomingRequest("https://example.com/mcp", {
+      method: "POST",
+      headers: {
+        Accept: "application/json, text/event-stream",
+        "Content-Type": "application/json",
+        "MCP-Protocol-Version": "2025-06-18",
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
+        id,
+        method,
+        params,
+      }),
+    }),
+    env,
+    createExecutionContext(),
+  );
 }
 
-describe("Access Worker", () => {
-  it("renders the simulated Access identity", async () => {
-    const { ctx, getIdentity } = accessContext("developer@example.com");
+describe("MCP Worker", () => {
+  it("renders the public Kumo page", async () => {
     const response = await worker.fetch(
       new IncomingRequest("https://example.com/"),
       env,
-      ctx,
+      createExecutionContext(),
     );
     const html = await response.text();
 
@@ -36,19 +46,17 @@ describe("Access Worker", () => {
     expect(response.headers.get("content-type")).toBe(
       "text/html; charset=UTF-8",
     );
-    expect(response.headers.get("cache-control")).toBe("private, no-store");
-    expect(html).toContain("developer@example.com");
-    expect(html).toContain("/cdn-cgi/access/logout");
-    expect(html).toContain('href="/"');
-    expect(getIdentity).toHaveBeenCalledOnce();
+    expect(html).toContain("MCP Server");
+    expect(html).toContain("/mcp");
+    expect(html).toContain(">Public<");
+    expect(html).not.toContain("Log in");
   });
 
   it("serves the unmodified Kumo standalone stylesheet", async () => {
-    const { ctx, getIdentity } = accessContext("developer@example.com");
     const response = await worker.fetch(
       new IncomingRequest("https://example.com/kumo.css"),
       env,
-      ctx,
+      createExecutionContext(),
     );
     const css = await response.text();
 
@@ -57,41 +65,53 @@ describe("Access Worker", () => {
       "text/css; charset=UTF-8",
     );
     expect(css).toContain("--color-kumo-");
-    expect(getIdentity).not.toHaveBeenCalled();
   });
 
-  it("returns 403 without an Access context", async () => {
+  it("initializes the unauthenticated MCP endpoint", async () => {
+    const response = await mcpRequest(1, "initialize", {
+      protocolVersion: "2025-06-18",
+      capabilities: {},
+      clientInfo: {
+        name: "test",
+        version: "1.0.0",
+      },
+    });
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain('"name":"Cloudflare MCP Server"');
+    expect(body).not.toContain("unauthorized");
+  });
+
+  it("lists the hello tool", async () => {
+    const response = await mcpRequest(2, "tools/list", {});
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain('"name":"hello"');
+    expect(body).toContain('"description":"Returns a greeting"');
+  });
+
+  it("calls the hello tool", async () => {
+    const response = await mcpRequest(3, "tools/call", {
+      name: "hello",
+      arguments: {
+        name: "Brendan",
+      },
+    });
+    const body = await response.text();
+
+    expect(response.status).toBe(200);
+    expect(body).toContain('"text":"Hello, Brendan!"');
+  });
+
+  it("returns 404 outside the public page and MCP endpoint", async () => {
     const response = await worker.fetch(
-      new IncomingRequest("https://example.com/"),
+      new IncomingRequest("https://example.com/missing"),
       env,
       createExecutionContext(),
     );
 
-    expect(response.status).toBe(403);
-    expect(await response.text()).toBe("Access required");
-  });
-
-  it("escapes identity values through React server rendering", async () => {
-    const { ctx } = accessContext('<script>alert("xss")</script>@example.com');
-    const response = await worker.fetch(
-      new IncomingRequest("https://example.com/"),
-      env,
-      ctx,
-    );
-    const html = await response.text();
-
-    expect(html).not.toContain("<script>alert");
-    expect(html).toContain("&lt;script&gt;");
-  });
-
-  it("falls back when Access has no email", async () => {
-    const { ctx } = accessContext(undefined);
-    const response = await worker.fetch(
-      new IncomingRequest("https://example.com/"),
-      env,
-      ctx,
-    );
-
-    expect(await response.text()).toContain(">unknown<");
+    expect(response.status).toBe(404);
   });
 });

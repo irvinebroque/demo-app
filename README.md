@@ -1,6 +1,6 @@
-# Access Worker
+# MCP Server
 
-A small server-rendered Worker protected by Cloudflare Access.
+A public, stateless MCP server on Cloudflare Workers.
 
 ## Run locally
 
@@ -9,7 +9,7 @@ npm install
 npm run dev
 ```
 
-Wrangler supplies `developer@example.com` through the local Access identity.
+The MCP endpoint is `http://localhost:8787/mcp`.
 
 ## Verify
 
@@ -23,12 +23,7 @@ npm run check
 npm run deploy
 ```
 
-In the Cloudflare dashboard, enable Access for the Worker and attach an Allow
-policy. Do not add a bypass policy. Access must remain the authentication
-boundary.
-
-The app reads identity from `ctx.access.getIdentity()`. It does not parse JWTs
-or manage sessions.
+The deployed endpoint is `https://<worker-domain>/mcp`.
 
 The checked-in stylesheet is the unmodified Kumo standalone build. Run
 `npm run styles:check` after dependency updates.
