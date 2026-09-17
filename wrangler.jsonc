@@ -1,0 +1,26 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "cloudflare-access-basic-web-app",
+  "main": "src/index.tsx",
+  "compatibility_date": "2026-09-17",
+  "compatibility_flags": ["nodejs_compat"],
+  "access": {
+    "dev": {
+      "aud": "cloudflare-access-basic-web-app",
+      "identity": {
+        "email": "developer@example.com"
+      }
+    }
+  },
+  "rules": [
+    {
+      "type": "Text",
+      "globs": ["**/*.txt"],
+      "fallthrough": true
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}
